@@ -1,0 +1,18 @@
+Problems:
+
+Do we count from 0 or 1?
+In remove func you have the range as "1 >= index <= list length"
+yet, in add func, you say Sheet1 can be removed.
+If counting from 0, index(0) is Sheet1, meaning lowest sheet that can be removed is Sheet2?
+
+In add function: 
+There's an integer overflow when naming the sheet.
+If we keep adding and removing sheets, eventually the next sheet's number will greater than the maximum of whatever type it is.
+Then, it overflows to it's minimum number.
+e.g. if the type is an int, once it overflows, it goes to "Sheet-2147483648".
+Theoretically, we can then keep adding and removing and it will eventually get back to "Sheet1", meaning we could have duplicate sheets names.
+
+In move function:
+Out of bounds issue (if counting from 0).
+If we move a Sheet to Sheet1 (i.e. index 0), and set the before boolean to true, it will try to move to the index -1.
+index -1 is obviously outside the bounds, therefore an issue. 
