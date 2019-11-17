@@ -40,8 +40,11 @@ public class SpreadSheetImpl {
     //Ctor for the class to init variables
     public SpreadSheetImpl() {
         m_Sheets = new ArrayList<String>();
-        m_Sheets.add("Sheet1"); //Spreadsheet must always have at least 1 sheet, so we add it when creating an object
-        m_nextSheetNum = 2;
+        //Add the default 3 sheets
+        m_Sheets.add("Sheet1");
+        m_Sheets.add("Sheet2");
+        m_Sheets.add("Sheet3");
+        m_nextSheetNum = 4;
     }
 
     //This function adds a new sheet to our list of sheets
