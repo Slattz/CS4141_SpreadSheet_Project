@@ -8,7 +8,7 @@ import java.util.ArrayList;
 public class SpreadSheetImpl {
     /* Private Member Variables */
     private ArrayList<String> m_Sheets;
-    private int nextSheetNum;
+    private int m_nextSheetNum;
 
     /* Private Functions */
     // Checks if the specific index is valid
@@ -16,22 +16,39 @@ public class SpreadSheetImpl {
         return (index >= 0 && index < m_Sheets.size());
     }
 
+    //Checks if a sheet name is valid; i.e. it's length > 1 and has only valid characters (a-z, A-Z, 0-9 and space)
+    private boolean isValidSheetName(String sheetName) {
+        if (sheetName.length() <= 1) { //Sheet names must be greater than 1 character
+            return false;
+        }
+
+        for (int i=0; i < sheetName.length(); i++) {
+            char ch = sheetName.charAt(i);
+            if ((ch < '0' || ch > '9') && ch != ' ') { //if character isn't between 0-9 and not a space
+                ch = (ch >= 'a' ? (char)(ch-0x20):ch); //if a lowercase letter or more, make it uppercase (-0x20)
+                if (ch < 'A' || ch > 'Z') { //if character isn't between A-Z
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     /* Public Functions */
 
     //Ctor for the class to init variables
     public SpreadSheetImpl() {
         m_Sheets = new ArrayList<String>();
-        m_Sheets.add("Sheet1"); //Spreadsheet must always have at least 1 sheet, so we add it at the start
-        nextSheetNum = 2;
+        m_Sheets.add("Sheet1"); //Spreadsheet must always have at least 1 sheet, so we add it when creating an object
+        m_nextSheetNum = 2;
     }
 
     //This function adds a new sheet to our list of sheets
     public boolean add() {
         if (m_Sheets.size() < 256) {
-            m_Sheets.add("Sheet" + nextSheetNum);
-            if (nextSheetNum < Integer.MAX_VALUE) { //We don't want it to be able to wrap around and break things
-                nextSheetNum++;
-            }
+            m_Sheets.add("Sheet" + m_nextSheetNum);
+            m_nextSheetNum++; //There's an integer overflow here
             return true;
         }
 
@@ -62,6 +79,7 @@ public class SpreadSheetImpl {
         return "";
     }
 
+    //This function moves a sheet from one position to another, given the sheet names
     public int move(String from, String to, boolean before) {
         int idxFrom = this.index(from);
         int idxTo = this.index(to);
@@ -69,24 +87,30 @@ public class SpreadSheetImpl {
         if (!from.equalsIgnoreCase(to) && this.isValidIndex(idxFrom) && this.isValidIndex(idxTo)) {
             String sheet = m_Sheets.remove(idxFrom); //remove returns the removed element
             idxTo += (before == true ? -1 : 1);
-            m_Sheets.add(idxTo, sheet); //if idxTo is 0 and we do before, then it's -1, which breaks things?
-            return idxTo;
+            if (this.isValidIndex(idxTo)) { //It can be -1 if the index of to is 0 and the 'before' boolean is set
+                m_Sheets.add(idxTo, sheet);
+                return idxTo;
+            }
         }
 
         return -1;
     }
 
+    //This function moves a sheet from one position to another, given the sheet indexes
     public String move(int from, int to, boolean before) {
         if (from != to && this.isValidIndex(from) && this.isValidIndex(to)) {
             String sheet = m_Sheets.remove(from); //remove returns the removed element
             int idxTo = to + (before == true ? -1 : 1);
-            m_Sheets.add(idxTo, sheet); //if idxTo is 0 and we do before, then it's -1, which breaks things?
-            return sheet;
+            if (this.isValidIndex(idxTo)) { //It can be -1 if 'to' is 0 and the 'before' boolean is set
+                m_Sheets.add(idxTo, sheet);
+                return sheet;
+            }
         }
 
         return "";
     }
 
+    //This function moves a sheet to the end of our sheet list, using the sheet's index
     public String moveToEnd(int from) {
         if (this.isValidIndex(from)) {
             String sheet = m_Sheets.remove(from); //remove returns the removed element
@@ -98,6 +122,7 @@ public class SpreadSheetImpl {
         return "";
     }
 
+    //This function moves a sheet to the end of our sheet list, using the sheet's name
     public int moveToEnd(String from) {
         int index = this.index(from);
 
@@ -110,11 +135,14 @@ public class SpreadSheetImpl {
         return -1;
     }
 
+    //This function allows to change the name of a sheet
     public int rename(String currentName, String newName) {
-        int index = this.index(currentName);
-        if (this.isValidIndex(index) && (this.index(newName) == -1)) { //if currentName is valid and newName not found
-            m_Sheets.set(index, newName);
-            return index;
+        if (this.isValidSheetName(newName)) {
+            int index = this.index(currentName);
+            if (this.isValidIndex(index) && (this.index(newName) == -1)) { //if currentName is valid and newName not found
+                m_Sheets.set(index, newName);
+                return index;
+            }
         }
 
         return -1;
@@ -122,7 +150,13 @@ public class SpreadSheetImpl {
 
     //returns index position of a name in our list; -1 if not found.
     public int index(String sheetName) {
-        return m_Sheets.indexOf(sheetName); //indexOf returns index of sheet; if not found, returns -1.
+        // Since names are case insensitive, we need to manually go through each string instead of using ArrayList.indexOf
+        for (int i = 0; i < sheetName.length(); i++) {
+            if (sheetName.equalsIgnoreCase(m_Sheets.get(i))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     //returns the name of the sheet at the specified index position; null string if not found.
