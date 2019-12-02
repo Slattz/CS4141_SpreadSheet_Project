@@ -223,10 +223,8 @@ public class SpreadSheetImpl {
     //Displays all sheet names in our list (along with their indexes)
     public void Display() {
         System.out.println("---List of Sheets---\nPosition\tName\n");
-        for (int i = 0; i < m_Sheets.length; i++) {
-            if (m_Sheets[i] != null) {
-                System.out.printf("%03d:\t\t%s\n", i+1, m_Sheets[i]);
-            }
+        for (int i = 0; i < m_sheetAmount; i++) {
+            System.out.printf("%03d:\t\t%s\n", i+1, m_Sheets[i]);
         }
         System.out.println(); //Print new line at end for neatness, so next print isn't squished to this one
     }
