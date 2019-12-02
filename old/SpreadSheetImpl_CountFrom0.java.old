@@ -12,12 +12,12 @@ public class SpreadSheetImpl {
     /* Private Functions */
     // Checks if the specific index is valid
     private boolean isValidIndex(int index) {
-        return (index >= 1 && index <= m_Sheets.length);
+        return (index >= 0 && index < m_Sheets.length);
     }
 
     private boolean sheetExists(String sheetName) {
         int idx = this.index(sheetName);
-        return this.isValidIndex(idx) && ((idx-1) <= m_sheetAmount);
+        return this.isValidIndex(idx) && (idx <= m_sheetAmount);
     }
 
     //Common function to remove from and fix our array of sheet names
@@ -26,8 +26,8 @@ public class SpreadSheetImpl {
             return false;
         }
 
-        m_Sheets[index-1] = null; //Mark for deletion
-        for (int i = (index-1); i < m_Sheets.length-1; i++) {
+        m_Sheets[index] = null; //Mark for deletion
+        for (int i = index; i < m_Sheets.length-1; i++) {
             m_Sheets[i] = m_Sheets[i+1];
             m_Sheets[i+1] = null; //Needed as otherwise we'd have a dupe of the last sheet we move
         }
@@ -45,11 +45,11 @@ public class SpreadSheetImpl {
 
         if (isValidIndex(index)) {
             /* Moving to certain position, need to fix array*/
-            for (int i = m_Sheets.length-2; i >= (index-1); i--) { //move all indexs up by one to 'slot' our name in
+            for (int i = m_Sheets.length-2; i >= index; i--) { //move all indexs up by one to 'slot' our name in
                 m_Sheets[i+1] = m_Sheets[i];
-                m_Sheets[i] = null;
+                m_Sheets[i] = null; // Needed as otherwise we'd have a dupe of the last sheet we move
             }
-            m_Sheets[index-1] = sheetName;
+            m_Sheets[index] = sheetName;
             m_sheetAmount++;
             return true;
         }
@@ -138,16 +138,25 @@ public class SpreadSheetImpl {
         int idxFrom = this.index(from);
         int idxTo = this.index(to);
 
-        String sheet = this.move(idxFrom, idxTo, before); //We can just use the other move function instead of having the code twice
-        return this.index(sheet); //index returns -1 if bad name (i.e. ""), otherwise returns sheets index
+        if (!from.equalsIgnoreCase(to) && this.isValidIndex(idxFrom) && this.isValidIndex(idxTo)) {
+            if (this.popSheet(idxFrom)) {
+                idxTo += (before == true ? -1 : 0);
+                if (this.isValidIndex(idxTo)) { //It can be -1 if the index of to is 0 and the 'before' boolean is set
+                    this.pushSheet(from, idxTo);
+                    return idxTo;
+                }
+            }
+        }
+
+        return -1;
     }
 
     //This function moves a sheet from one position to another, given the sheet indexes
     public String move(int from, int to, boolean before) {
         if (from != to && this.isValidIndex(from) && this.isValidIndex(to)) {
             String sheet = this.sheetName(from);
-            if (this.popSheet(from)) { //remove sheet
-                int idxTo = to + (before == true ? -1 : 0); //0 as we removed a sheet, so after index is actually idxTo already
+            if (this.popSheet(from)) {
+                int idxTo = to + (before == true ? -1 : 1);
                 if (this.isValidIndex(idxTo)) { //It can be -1 if 'to' is 0 and the 'before' boolean is set
                     this.pushSheet(sheet, idxTo);
                     return sheet;
@@ -192,7 +201,7 @@ public class SpreadSheetImpl {
         if (this.isValidSheetName(newName)) {
             int index = this.index(currentName);
             if (this.isValidIndex(index) && (!this.sheetExists(newName))) { //if currentName is valid and newName not found
-                m_Sheets[index-1] = newName;
+                m_Sheets[index] = newName;
                 return index;
             }
         }
@@ -202,19 +211,19 @@ public class SpreadSheetImpl {
 
     //returns index position of a name in our list; -1 if not found.
     public int index(String sheetName) {
-        //We need to manually go through each string to check if exists
+        // Since names are case insensitive, we need to manually go through each string instead of using ArrayList.indexOf
         for (int i = 0; i < m_Sheets.length; i++) {
             if (sheetName.equalsIgnoreCase(m_Sheets[i])) {
-                return (i+1); //Counting from 1, so i+1
+                return i;
             }
         }
         return -1;
     }
 
     //returns the name of the sheet at the specified index position; null string if not found.
-    public String sheetName(int index) { //index counts from 1, not 0
-        if (this.isValidIndex(index) && m_Sheets[index-1] != null) {
-            return m_Sheets[index-1];
+    public String sheetName(int index) {
+        if (this.isValidIndex(index) && m_Sheets[index] != null) {
+            return m_Sheets[index];
         }
 
         return "";
@@ -222,13 +231,13 @@ public class SpreadSheetImpl {
 
     //Displays all sheet names in our list (along with their indexes)
     public void Display() {
-        System.out.println("---List of Sheets---\nPosition\tName\n");
+        System.out.println("--List of Sheets--\nIndex\tName\n");
         for (int i = 0; i < m_Sheets.length; i++) {
             if (m_Sheets[i] != null) {
-                System.out.printf("%03d:\t\t%s\n", i+1, m_Sheets[i]);
+                System.out.printf("%03d:\t%s\n", i, m_Sheets[i]);
             }
         }
-        System.out.println(); //Print new line at end for neatness, so next print isn't squished to this one
+        System.out.println();
     }
 
     //returns an integer value representing the number of items in our list.
